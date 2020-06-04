@@ -4,35 +4,29 @@ import java.util.ArrayList;
 
 public class DataManager {
 	public ArrayList<File> Files = new ArrayList<File>();
-	private boolean startindex;
 	private int chsize = 0;
 	int fileId = -1;
+	private int lastindex = 0;
+	private int totalmemory = Block.n;
 	private int freememory = Block.n;
 	private ArrayList<Knot> knots = new ArrayList<Knot>();;
 
 	public void CreateFile(int size) {
-		startindex = true;
 		chsize = 0;
 		fileId = Files.size();
-		if (size > freememory) {
+		if (lastindex + size > totalmemory) {
 			Main.textAreaWindow.append("Невозможно добавить файл! \n");
-			startindex = false;
 			return;
 		}
 		File file = new File(fileId, size);
-		for (int i = 0; i <= Block.n; i++) {
-			if (size > chsize) {
-				if (Block.memory.get(i).getId() != -1) {
-					while (Block.memory.get(i).getId() != -1) {
-						i++;
-					}
-				}
-				int fileid = file.getId();
-				addKnot(Block.memory.get(i), fileid);
-				freememory--;
-				chsize++;
-			}
+
+		int fileid = file.getId();
+		for (int i = lastindex; i <= totalmemory; i++) {
+			addKnot(Block.memory.get(i), fileid);
+			chsize++;
 			if (size == chsize) {
+				lastindex += size;
+				freememory = totalmemory - lastindex;
 				Files.add(fileId, file);
 				Main.textAreaWindow.append("Добавлен файл №" + fileId + "\n");
 				Main.textAreaWindow.append("Свободно памяти:" + freememory + "\n");
@@ -40,17 +34,30 @@ public class DataManager {
 			}
 		}
 	}
+
 	public void DeleteFile(int id) {
 		if (Files.get(id) == null) {
 			Main.textAreaWindow.append("Данного файла не сущетвует! \n");
-		} else {
-			freememory = freememory + Files.get(id).fileSize();
+		} else {			
+			int n = 0;
 			removeKnots(id);
+			for(int i = 0 ; i < knots.size();i++){
+				if(knots.get(i).getId()!=-1){
+					n = i+1;
+				}
+			}			
+			if(knots.size() == n){
+				lastindex = lastindex - Files.get(id).fileSize();
+			}
+			
+			freememory = totalmemory - lastindex;
+			
 			Main.textAreaWindow.append("Удалён файл" + Main.textFieldId.getText() + "\n");
 		}
 		Main.textAreaWindow.append("Свободно памяти:" + freememory + "\n");
 
 	}
+
 	public void addKnot(Knot knot, int fileid) {
 		knots.add(knot);
 		knot.setFile(fileid);
